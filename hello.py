@@ -2,13 +2,16 @@
 # flask基础学习
 
 from datetime import datetime
+from threading import Thread
 from flask import Flask, render_template, redirect, url_for, session, flash
 from flask_script import Manager, Shell
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
+from flask_mail import Mail, Message
 from forms import NameForm
+
 
 
 app = Flask(__name__)
@@ -20,12 +23,37 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:1234@localhost/fl
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+app.config['MAIL_SERVER'] = 'smtp.aliyun.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = 'pengguangxing@aliyun.com'
+app.config['MAIL_PASSWORD'] = 'PGX5967973'
+app.config['MAIL_SUBJECT_PREFIX'] = '[PENG]'
+app.config['MAIL_SENDER'] = 'pengguangxing<pengguangxing@aliyun.com>'
+
+app.config['FLASK_ADMIN'] = 'pengguangxing1990@163.com'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
 moment = Moment(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+mail = Mail(app)
+
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
+
+def send_email(to, subject, template, **kwargs):
+    msg = Message(app.config['MAIL_SUBJECT_PREFIX'] + subject,
+                  sender=app.config['MAIL_SENDER'], recipients=[to])
+    msg.body = render_template(template + '.txt', **kwargs)
+    msg.html = render_template(template + '.html', **kwargs)
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+    return thr
 
 
 class Role(db.Model):
@@ -57,6 +85,9 @@ def index():
             user = User(username=form.name.data)
             db.session.add(user)
             session['known'] = False
+            if app.config['FLASK_ADMIN']:
+                send_email(app.config['FLASK_ADMIN'], 'New User',
+                           'email/new_user', user=user)
         else:
             session['known'] = True
         session['name'] = form.name.data
