@@ -1,2 +1,3 @@
-# flask-project
+这是我学习《Flask Web 开发》代码库，具体请参见代码。
+
 

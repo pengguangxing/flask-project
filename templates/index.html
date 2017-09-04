@@ -1,11 +1,16 @@
 {% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% block title %}Flask{% endblock %}
 
 {% block page_content %}
 <div>
-    <h1>Hello, World!</h1>
+    <h1>Hello, {% if name %}{{ name }}{% else %}World!{% endif %}</h1>
     <br>
-    <p>现在是北京时间：{{ moment(current_time).format('YYYY-MM-DD HH:MM:SS') }}。</p>
+    {% if not known %}<p>Nice to meet you !</p>
+    {% else %}<p>Happy to see you again!</p>
+    {% endif %}
+    {{ wtf.quick_form(form) }}
+    <p>现在是北京时间：{{ moment(current_time).format('LLL') }}。</p>
 </div>
 {% endblock %}

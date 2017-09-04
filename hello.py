@@ -2,26 +2,68 @@
 # flask基础学习
 
 from datetime import datetime
-from flask import Flask, make_response, render_template
-from flask_script import Manager
+from flask import Flask, render_template, redirect, url_for, session, flash
+from flask_script import Manager, Shell
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate, MigrateCommand
+from forms import NameForm
 
 
 app = Flask(__name__)
 
 
+app.config['debug'] = True
+app.config['SECRET_KEY'] = '\x97\xdd#\x1d\x8a\xf1\x87\xd3\xc6\x021\x02\x03\x12M\xa4u,\xfb.>\x82\xe4K'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:1234@localhost/flask'
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
 manager = Manager(app)
 bootstrap = Bootstrap(app)
 moment = Moment(app)
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
-app.config['debug'] = True
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    users = db.relationship('User', backref='role', lazy='dynamic')
+
+    def __repr__(self):
+        return '<Role %r>' % self.name
 
 
-@app.route('/')
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html', current_time=datetime.utcnow())
+    form = NameForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.name.data).first()
+        if user is None:
+            user = User(username=form.name.data)
+            db.session.add(user)
+            session['known'] = False
+        else:
+            session['known'] = True
+        session['name'] = form.name.data
+        return redirect(url_for('index'))
+    return render_template('index.html', current_time=datetime.utcnow(),
+                           form=form, name=session.get('name'),
+                           known=session.get('known', False))
 
 
 @app.route('/<username>')
@@ -39,6 +81,12 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('500.html'), 500
 
+
+def make_shell_context():
+    return dict(app=app, db=db, User=User, Role=Role)
+
+manager.add_command('shell', Shell(make_context=make_shell_context))
+manager.add_command('db', MigrateCommand)
 
 if __name__ == '__main__':
     manager.run()
