@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Internal Server Error{% endblock %}
+
+{% block page_content %}
+<div>
+    <h1>服务器内部错误。<a href="{{ url_for('index') }}">返回首页</a></h1>
+</div>
+{% endblock %}

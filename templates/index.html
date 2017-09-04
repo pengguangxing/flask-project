@@ -1,1 +1,11 @@
-<h1>Hello, {{ name }}</h1>
+{% extends "base.html" %}
+
+{% block title %}Flask{% endblock %}
+
+{% block page_content %}
+<div>
+    <h1>Hello, World!</h1>
+    <br>
+    <p>现在是北京时间：{{ moment(current_time).format('YYYY-MM-DD HH:MM:SS') }}。</p>
+</div>
+{% endblock %}
