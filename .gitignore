@@ -41,3 +41,7 @@ nosetests.xml
 # Virtual environment
 venv
 migrations/versions/
+<<<<<<< HEAD
+=======
+
+>>>>>>> dev
