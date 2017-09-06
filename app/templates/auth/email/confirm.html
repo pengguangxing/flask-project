@@ -1,0 +1,6 @@
+<p>尊敬的用户 {{ user.username }},</p>
+<p>请<a href="{{ url_for('auth.confirm', token=token, _external=True) }}">点击这里</a>完成账户确认!</p>
+<p>或者，您也可以复制下面的网址到浏览器地址栏：</p>
+<p>{{ url_for('auth.confirm', token=token, _external=True) }}</p>
+<p>开发者：彭光兴</p>
+<p><small>提示：此邮件不用回复。</small></p>
