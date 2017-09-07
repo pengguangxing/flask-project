@@ -12,12 +12,13 @@ from ..email import send_email
 @auth.before_app_request
 def before_request():
     """使用全局钩子，过滤未确认的账户"""
-    if current_user.is_authenticated \
-            and not current_user.confirmed \
-            and request.endpoint \
-            and request.endpoint[:5] != 'auth.' \
-            and request.endpoint != 'static':
-        return redirect(url_for('auth.unconfirmed'))
+    if current_user.is_authenticated:
+        current_user.ping()
+        if not current_user.confirmed \
+                and request.endpoint \
+                and request.endpoint[:5] != 'auth.' \
+                and request.endpoint != 'static':
+            return redirect(url_for('auth.unconfirmed'))
 
 
 @auth.route('/unconfirmed')
@@ -58,7 +59,8 @@ def register():
         db.session.commit()
         token = user.generate_confirmation_token()
         send_email(user.email, '确认您的账户', 'auth/email/confirm', user=user, token=token)
-        flash('注册成功！确认邮件已发送至您的注册邮箱，请查收邮件尽快完成账户确认！')
+
+        flash('注册成功！请先登录试试！另外，确认邮件已发送至您的注册邮箱，请查收邮件完成账户确认')
         return redirect(request.args.get('next') or url_for('auth.login'))
     return render_template('auth/register.html', form=form)
 

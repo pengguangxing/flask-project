@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
 import time
 import unittest
-from app.models import User
-from app import db
+from app.models import User, Role, Permission, AnonymousUser
+from app import db, create_app
 
 
 class UserModelTestCase(unittest.TestCase):
+    def setUp(self):
+        """搭建测试环境"""
+        self.app = create_app('testing')
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        """还原测试环境"""
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
     def test_password_setter(self):
         """测试密码设置"""
         u = User(password='cat')
@@ -74,5 +87,20 @@ class UserModelTestCase(unittest.TestCase):
         token = u1.generate_reset_token()
         self.assertFalse(u2.reset_password(token, 'jack'))
         self.assertTrue(u2.verify_password('dog'))
+
+    def test_role_and_permissions(self):
+        """验证管理员和普通用户权限"""
+        Role.insert_roles()
+        u1 = User(email='pengguangxing1990@163.com', password='cat')
+        u2 = User(email='john@qq.com', password='cat')
+        self.assertTrue(u1.is_administrator())
+        self.assertTrue(u1.can(Permission.FOLLOW))
+        self.assertTrue(u2.can(Permission.WRITE_ARTICLES))
+        self.assertFalse(u2.can(Permission.MODERATE_COMMENTS))
+
+    def test_anonymous_user(self):
+        """验证匿名用户不具权限"""
+        u = AnonymousUser()
+        self.assertFalse(u.can(Permission.FOLLOW))
 
 
