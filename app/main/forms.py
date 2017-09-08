@@ -7,9 +7,9 @@ from wtforms.validators import DataRequired, Length, Email
 from ..models import Role, User
 
 
-class NameForm(FlaskForm):
-    name = StringField('What\'s your name?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+class PostForm(FlaskForm):
+    body = TextAreaField('发表您的文章', validators=[DataRequired()])
+    submit = SubmitField('发表')
 
 
 class EditProfileForm(FlaskForm):
