@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import time
 import unittest
-from app.models import User, Role, Permission, AnonymousUser
+from datetime import datetime
+from app.models import User, Role, Permission, AnonymousUser, Follow
 from app import db, create_app
 
 
@@ -102,5 +103,49 @@ class UserModelTestCase(unittest.TestCase):
         """验证匿名用户不具权限"""
         u = AnonymousUser()
         self.assertFalse(u.can(Permission.FOLLOW))
+
+    def test_ping(self):
+        """验证刷新最后访问时间的方法"""
+        u = User(password='cat')
+        db.session.add(u)
+        db.session.commit()
+        time.sleep(2)
+        last_seen_before = u.last_seen
+        u.ping()
+        self.assertTrue(u.last_seen > last_seen_before)
+
+
+    def test_follows(self):
+        u1 = User(email='123@qq.com', password='cat')
+        u2 = User(email='456@qq.com', password='dog')
+        db.session.add_all([u1, u2])
+        db.session.commit()
+        self.assertFalse(u1.is_following(u2))
+        self.assertFalse(u1.is_followed_by(u2))
+        u1.follow(u2)
+        db.session.add(u1)
+        db.session.commit()
+        self.assertTrue(u1.is_following(u2))
+        self.assertTrue(u2.is_followed_by(u1))
+        self.assertFalse(u1.is_followed_by(u2))
+        self.assertTrue(u1.followed.count() == 2)
+        self.assertTrue(u2.followers.count() == 2)
+        u1.unfollow(u2)
+        db.session.add(u1)
+        db.session.commit()
+        self.assertTrue(u1.followed.count() == 1)
+        self.assertTrue(u2.followers.count() == 1)
+        self.assertTrue(Follow.query.count() == 2)
+        u2.follow(u1)
+        db.session.add(u1)
+        db.session.add(u2)
+        db.session.commit()
+        db.session.delete(u2)
+        db.session.commit()
+        self.assertTrue(Follow.query.count() == 1)
+
+
+
+
 
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import current_app
 from flask_wtf import FlaskForm
+from flask_pagedown.fields import PageDownField
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField,SelectField
 from wtforms import ValidationError
 from wtforms.validators import DataRequired, Length, Email
@@ -8,7 +9,7 @@ from ..models import Role, User
 
 
 class PostForm(FlaskForm):
-    body = TextAreaField('发表您的文章', validators=[DataRequired()])
+    body = PageDownField('发表您的文章', validators=[DataRequired()])
     submit = SubmitField('发表')
 
 

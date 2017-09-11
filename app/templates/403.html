@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Forbidden{% endblock %}
+
+{% block page_content %}
+<div>
+    <h1>禁止访问<a href="{{ url_for('main.index') }}">返回首页</a></h1>
+</div>
+{% endblock %}
