@@ -81,6 +81,7 @@ class User(db.Model, UserMixin):
                                backref=db.backref('followed', lazy='joined'),
                                lazy='dynamic',
                                cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -244,6 +245,7 @@ class Post(db.Model):
     timestamp =db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     body_html = db.Column(db.Text)
+    comments = db.relationship('Comment', backref='post', lazy='dynamic')
 
     @staticmethod
     def generate_fake(count=100):
@@ -272,3 +274,41 @@ class Post(db.Model):
 
 db.event.listen(Post.body, 'set', Post.on_change_body)
 
+
+class Comment(db.Model):
+    __tablename__ ='comments'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    disabled = db.Column(db.Boolean)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+    @staticmethod
+    def generate_fake_comment(count=100):
+        from random import randint, seed
+        import forgery_py
+        user_count = User.query.count()
+
+        seed()
+        for i in range(count):
+            u = User.query.offset(randint(0, user_count - 1)).first()
+            comment = Comment(body=forgery_py.lorem_ipsum.sentences(),
+                              author=u,
+                              post=Post.query.get(2))
+            db.session.add(comment)
+        db.session.commit()
+
+
+    @staticmethod
+    def on_change_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p']
+        target.body_html = bleach.linkify(bleach.clean(
+            markdown(value, output_format='html'),
+            tags=allowed_tags, strip=True))
+
+
+db.event.listen(Comment.body, 'set', Comment.on_change_body)

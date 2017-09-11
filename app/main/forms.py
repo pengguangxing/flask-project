@@ -56,3 +56,8 @@ class EditProfileAdminForm(FlaskForm):
                         Role.query.get(field.data) != self.user.role:
             raise ValidationError('不允许修改超级管理员的角色权限')
 
+
+class CommentForm(FlaskForm):
+    body = StringField('', validators=[DataRequired()])
+    submit = SubmitField('评论')
+
